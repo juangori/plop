@@ -1,0 +1,125 @@
+import React from 'react';
+import { 
+  TouchableOpacity, 
+  Text, 
+  StyleSheet, 
+  ViewStyle,
+  ActivityIndicator 
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS } from '../constants';
+
+interface PrimaryButtonProps {
+  title: string;
+  onPress: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  icon?: string;
+  variant?: 'primary' | 'success' | 'secondary';
+  style?: ViewStyle;
+}
+
+export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
+  title,
+  onPress,
+  disabled = false,
+  loading = false,
+  icon,
+  variant = 'primary',
+  style,
+}) => {
+  const handlePress = async () => {
+    if (disabled || loading) return;
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  };
+
+  const getGradient = (): [string, string] => {
+    if (disabled) return ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)'];
+    
+    switch (variant) {
+      case 'success':
+        return ['#4ADE80', '#22C55E'];
+      case 'secondary':
+        return ['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.1)'];
+      default:
+        return [COLORS.primary, COLORS.primaryLight];
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
+      style={[styles.wrapper, style]}
+    >
+      <LinearGradient
+        colors={getGradient()}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          styles.gradient,
+          variant === 'success' && !disabled && styles.successShadow,
+          variant === 'primary' && !disabled && styles.primaryShadow,
+        ]}
+      >
+        {loading ? (
+          <ActivityIndicator color={COLORS.textPrimary} />
+        ) : (
+          <>
+            {icon && <Text style={styles.icon}>{icon}</Text>}
+            <Text style={[
+              styles.text,
+              disabled && styles.textDisabled,
+            ]}>
+              {title}
+            </Text>
+          </>
+        )}
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  wrapper: {
+    width: '100%',
+    maxWidth: 300,
+    alignSelf: 'center',
+  },
+  gradient: {
+    height: 60,
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  primaryShadow: {
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  successShadow: {
+    shadowColor: COLORS.healthy,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  icon: {
+    fontSize: 24,
+  },
+  text: {
+    color: COLORS.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  textDisabled: {
+    color: COLORS.textMuted,
+  },
+});
