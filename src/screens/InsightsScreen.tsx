@@ -1,12 +1,17 @@
-import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { Download } from 'lucide-react-native';
 import { DayData } from '../types';
 import { COLORS, QUICK_TAGS, BRISTOL_TYPES, getHealthColor, getStoolColorHealthColor } from '../constants';
 import { calculateStats, getTypeDistribution, getTagCorrelations, getColorDistribution } from '../utils';
@@ -17,7 +22,33 @@ interface InsightsScreenProps {
 }
 
 export const InsightsScreen: React.FC<InsightsScreenProps> = ({ history }) => {
+  const [exporting, setExporting] = useState(false);
   const stats = calculateStats(history);
+
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const exportData = {
+        app: 'Flushy',
+        exportedAt: new Date().toISOString(),
+        totalEntries: history.flatMap(d => d.entries).length,
+        data: history,
+      };
+      const json = JSON.stringify(exportData, null, 2);
+      const fileName = `flushy-export-${new Date().toISOString().split('T')[0]}.json`;
+      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+      await FileSystem.writeAsStringAsync(filePath, json);
+      await Sharing.shareAsync(filePath, {
+        mimeType: 'application/json',
+        dialogTitle: 'Export Flushy Data',
+      });
+    } catch (error) {
+      Alert.alert('Export failed', 'Could not export your data. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
   const typeDistribution = getTypeDistribution(history);
   const tagCorrelations = getTagCorrelations(history, QUICK_TAGS);
   const maxCount = Math.max(...typeDistribution.map(t => t.count), 1);
@@ -115,12 +146,14 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({ history }) => {
                 <View style={styles.healthContent}>
                   <View>
                     <Text style={styles.healthLabel}>Gut Health Score</Text>
-                    <Text style={styles.healthScore}>{stats.healthScore}</Text>
+                    <Text style={styles.healthScore}>{stats.healthScore ?? '-'}</Text>
                   </View>
                   <Text style={styles.healthEmoji}>🎯</Text>
                 </View>
                 <Text style={styles.healthDesc}>
-                  Based on proximity to ideal Type 4. Keep it up!
+                  {stats.healthScore === null
+                    ? 'Start logging to see your gut health score.'
+                    : 'Based on proximity to ideal Type 4. Keep it up!'}
                 </Text>
               </LinearGradient>
 
@@ -195,6 +228,19 @@ export const InsightsScreen: React.FC<InsightsScreenProps> = ({ history }) => {
                   • Unusual stool colors persisting 2-3+ days may warrant medical attention
                 </Text>
               </View>
+
+              {/* Export Data */}
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={handleExport}
+                activeOpacity={0.7}
+                disabled={exporting}
+              >
+                <Download size={18} color={COLORS.textSecondary} strokeWidth={2} />
+                <Text style={styles.exportText}>
+                  {exporting ? 'Exporting...' : 'Export Data'}
+                </Text>
+              </TouchableOpacity>
 
               {/* Disclaimer */}
               <View style={styles.disclaimer}>
@@ -414,6 +460,24 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 13,
     lineHeight: 22,
+  },
+  exportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  exportText: {
+    color: COLORS.textSecondary,
+    fontSize: 15,
+    fontWeight: '500',
   },
   disclaimer: {
     marginTop: 16,

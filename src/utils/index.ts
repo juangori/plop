@@ -71,15 +71,19 @@ export const calculateStats = (history: DayData[]): Stats => {
   
   // Health score (0-100, only type 4 = 100, drops off from there)
   // Distance from 4: 0→100, 1→70, 2→40, 3→10
-  const avgTypeNum = parseFloat(avgType) || 4;
-  const distance = Math.abs(avgTypeNum - 4);
-  const healthScore = Math.round(Math.max(0, 100 - (distance * 30)));
-  
-  return { 
-    streak, 
-    weekCount: weekEntries.length, 
+  // null when no entries exist
+  let healthScore: number | null = null;
+  if (weekEntries.length > 0) {
+    const avgTypeNum = parseFloat(avgType);
+    const distance = Math.abs(avgTypeNum - 4);
+    healthScore = Math.max(0, Math.min(100, Math.round(100 - (distance * 30))));
+  }
+
+  return {
+    streak,
+    weekCount: weekEntries.length,
     avgType,
-    healthScore: Math.max(0, Math.min(100, healthScore))
+    healthScore
   };
 };
 

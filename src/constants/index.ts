@@ -63,7 +63,8 @@ export const COLORS = {
   borderLight: 'rgba(255, 255, 255, 0.05)',
 };
 
-export const STORAGE_KEY = '@plop_history';
+export const STORAGE_KEY = '@flushy_history';
+export const LEGACY_STORAGE_KEY = '@plop_history';
 
 export const getHealthColor = (health: BristolType['health']): string => {
   switch (health) {

@@ -41,5 +41,5 @@ export interface Stats {
   streak: number;
   weekCount: number;
   avgType: string;
-  healthScore: number;
+  healthScore: number | null;
 }

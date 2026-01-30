@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Plus } from 'lucide-react-native';
 import { StatCard, PrimaryButton } from '../components';
 import { DayData, Stats } from '../types';
 import { COLORS, BRISTOL_TYPES, getHealthColor, getStoolColorById } from '../constants';
@@ -77,8 +78,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             />
             <StatCard
               label="Gut Score"
-              value={stats.healthScore}
-              color={stats.healthScore >= 70 ? COLORS.healthy : stats.healthScore >= 40 ? COLORS.warning : COLORS.alert}
+              value={stats.healthScore ?? '-'}
+              color={stats.healthScore === null ? COLORS.textMuted : stats.healthScore >= 70 ? COLORS.healthy : stats.healthScore >= 40 ? COLORS.warning : COLORS.alert}
             />
           </View>
 
@@ -93,7 +94,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {history.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🚽</Text>
+                <Image source={require('../../assets/flushy-emoji.png')} style={styles.emptyImage} />
                 <Text style={styles.emptyText}>No logs yet</Text>
                 <Text style={styles.emptySubtext}>
                   Tap the button below to start tracking
@@ -142,7 +143,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <View style={styles.buttonContainer}>
           <PrimaryButton
             title="Log Now"
-            icon={<Image source={require('../../assets/flushy-emoji.png')} style={{ width: 28, height: 28 }} />}
+            icon={<Plus size={22} color={COLORS.textPrimary} strokeWidth={2.5} />}
             onPress={onLogPress}
             variant="primary"
           />
@@ -197,8 +198,8 @@ const styles = StyleSheet.create({
     letterSpacing: -1,
   },
   titleEmoji: {
-    width: 34,
-    height: 34,
+    width: 60,
+    height: 60,
   },
   statsRow: {
     flexDirection: 'row',
@@ -278,9 +279,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 40,
   },
-  emptyEmoji: {
-    fontSize: 48,
+  emptyImage: {
+    width: 72,
+    height: 72,
     marginBottom: 12,
+    opacity: 0.9,
   },
   emptyText: {
     color: COLORS.textSecondary,

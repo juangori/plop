@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DayData, LogEntry, BristolType } from '../types';
-import { STORAGE_KEY } from '../constants';
+import { STORAGE_KEY, LEGACY_STORAGE_KEY } from '../constants';
 import { generateId, formatTime, getTodayString } from '../utils';
 
 export const usePoopHistory = () => {
@@ -15,7 +15,16 @@ export const usePoopHistory = () => {
 
   const loadHistory = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      let stored = await AsyncStorage.getItem(STORAGE_KEY);
+      // Migrate from legacy key if needed
+      if (!stored) {
+        const legacy = await AsyncStorage.getItem(LEGACY_STORAGE_KEY);
+        if (legacy) {
+          stored = legacy;
+          await AsyncStorage.setItem(STORAGE_KEY, legacy);
+          await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
+        }
+      }
       if (stored) {
         setHistory(JSON.parse(stored));
       }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBar, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -6,17 +6,32 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import { LinearGradient } from 'expo-linear-gradient';
 import { House, CalendarDays, ChartBar } from 'lucide-react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { HomeScreen, LogScreen, TimelineScreen, InsightsScreen } from './src/screens';
+import { HomeScreen, LogScreen, TimelineScreen, InsightsScreen, OnboardingScreen } from './src/screens';
 import { usePoopHistory } from './src/hooks/usePoopHistory';
 import { COLORS } from './src/constants';
 import { BristolType } from './src/types';
+
+const ONBOARDING_KEY = '@flushy_onboarding_done';
 
 const Tab = createMaterialTopTabNavigator();
 
 export default function App() {
   const { history, isLoading, addEntry, deleteEntry } = usePoopHistory();
   const [showLogScreen, setShowLogScreen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem(ONBOARDING_KEY).then((value) => {
+      setShowOnboarding(value !== 'true');
+    });
+  }, []);
+
+  const handleOnboardingComplete = async () => {
+    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  };
 
   const handleSaveEntry = async (type: BristolType, tags: string[], color: string): Promise<boolean> => {
     const success = await addEntry(type, tags, undefined, color);
@@ -27,7 +42,7 @@ export default function App() {
   };
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || showOnboarding === null) {
     return (
       <LinearGradient
         colors={[COLORS.bgPrimary, COLORS.bgSecondary, COLORS.bgTertiary]}
@@ -36,6 +51,16 @@ export default function App() {
         <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Loading...</Text>
       </LinearGradient>
+    );
+  }
+
+  // Onboarding
+  if (showOnboarding) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar barStyle="light-content" />
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      </SafeAreaProvider>
     );
   }
 
